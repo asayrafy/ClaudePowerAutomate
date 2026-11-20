@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Power Automate Builder helper</title>
+<style>
+:root{
+  --bg:#F3F5F6; --surface:#FFFFFF; --ink:#1E262C; --muted:#56636C; --slate:#5F7482; --slate-tint:#E3E7EA;
+  --crimson:#BC1818; --line:#D2D1D7; --sheet:#FFFFFF; --ok:#2E6B45; --focus:#1C4E80;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#151A1E; --surface:#1E252A; --ink:#E8ECEE; --muted:#A3B0B8; --slate:#93A6B3; --slate-tint:#2A343B;
+    --crimson:#EC6A60; --line:#37424A; --sheet:#232B31; --ok:#7BC495; --focus:#8DBBEA;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#151A1E; --surface:#1E252A; --ink:#E8ECEE; --muted:#A3B0B8; --slate:#93A6B3; --slate-tint:#2A343B;
+  --crimson:#EC6A60; --line:#37424A; --sheet:#232B31; --ok:#7BC495; --focus:#8DBBEA;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%; scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0; min-height:100%; background:var(--bg); color:var(--ink);
+  font-family:Arial,"Helvetica Neue",Helvetica,sans-serif; font-size:16px; line-height:1.5}
+.wrap{max-width:1120px; margin:0 auto; padding:0 20px 64px}
+header.top{padding:28px 0 0}
+h1{font-size:1.75rem; line-height:1.2; margin:0 0 6px; font-weight:700; letter-spacing:-0.01em}
+.lede{margin:0; color:var(--muted); max-width:62ch}
+nav{display:flex; gap:4px; margin-top:22px; border-bottom:2px solid var(--line); overflow-x:auto}
+nav a{padding:10px 16px; text-decoration:none; color:var(--muted); font-weight:700; white-space:nowrap;
+  border-bottom:3px solid transparent; margin-bottom:-2px}
+nav a[aria-current="page"]{color:var(--ink); border-bottom-color:var(--crimson)}
+nav a:hover{color:var(--ink)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:3px solid var(--focus); outline-offset:2px}
+section.view{display:none; padding-top:28px}
+section.view.on{display:block}
+h2{font-size:1.25rem; margin:0 0 4px}
+h3{font-size:1rem; margin:28px 0 10px}
+p.help{margin:0 0 18px; color:var(--muted); max-width:66ch}
+.bench{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,440px); gap:32px; align-items:start}
+@media (max-width:860px){.bench{grid-template-columns:1fr}}
+fieldset{border:0; padding:0; margin:0 0 26px}
+legend{font-weight:700; padding:0; margin-bottom:10px; font-size:1.05rem}
+legend span{display:inline-block; width:1.7em; height:1.7em; line-height:1.7em; text-align:center; border-radius:50%;
+  background:var(--slate); color:var(--surface); font-size:.85rem; margin-right:8px}
+label{display:block; font-weight:700; font-size:.9rem; margin:12px 0 4px}
+label small{font-weight:400; color:var(--muted)}
+input[type=text],input[type=url],input[type=email],select,textarea{
+  width:100%; font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--line);
+  border-radius:4px; padding:9px 10px}
+textarea{min-height:110px; resize:vertical}
+.row{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+@media (max-width:520px){.row{grid-template-columns:1fr}}
+.choices{display:grid; gap:8px}
+.choice{display:flex; gap:10px; align-items:flex-start; background:var(--surface); border:1px solid var(--line);
+  border-radius:4px; padding:10px 12px; cursor:pointer; font-weight:400; margin:0; font-size:1rem}
+.choice input{margin-top:4px; accent-color:var(--crimson)}
+.choice b{display:block}
+.choice span{color:var(--muted); font-size:.9rem}
+.choice:has(input:checked){border-color:var(--slate); background:var(--slate-tint)}
+.warn{color:var(--crimson); font-size:.88rem; margin-top:4px; min-height:1.2em}
+.sheet{position:sticky; top:16px; background:var(--sheet); border:1px solid var(--line); border-left:5px solid var(--crimson);
+  border-radius:2px; padding:20px 20px 16px}
+@media (max-width:860px){.sheet{position:static}}
+.sheet h2{font-size:1rem; margin-bottom:10px}
+.sheet pre{margin:0; white-space:pre-wrap; word-break:break-word; font-family:"Courier New",Courier,monospace;
+  font-size:.86rem; line-height:1.55; max-height:52vh; overflow:auto}
+.ready{margin:14px 0 0; padding:10px 0 0; border-top:1px solid var(--line); font-size:.9rem}
+.ready ul{margin:6px 0 0; padding-left:18px}
+.ready li{color:var(--crimson)}
+.ready .good{color:var(--ok); font-weight:700}
+.actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px}
+button{font:inherit; font-weight:700; border-radius:4px; padding:9px 16px; cursor:pointer; border:1px solid var(--slate);
+  background:var(--surface); color:var(--ink)}
+button.primary{background:var(--crimson); border-color:var(--crimson); color:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) button.primary{color:#1b0b0a}}
+:root[data-theme="dark"] button.primary{color:#1b0b0a}
+button:hover{filter:brightness(.96)}
+.tablewrap{overflow-x:auto; background:var(--surface); border:1px solid var(--line); border-radius:4px}
+table{border-collapse:collapse; width:100%; min-width:520px}
+th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top; font-size:.93rem}
+th{background:var(--slate-tint); font-size:.85rem}
+tr:last-child td{border-bottom:0}
+code,.tok{font-family:"Courier New",Courier,monospace; font-size:.9rem}
+button.tok{padding:3px 8px; border-color:var(--line); font-weight:400; background:var(--bg)}
+.out{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--slate); padding:12px 14px; border-radius:2px;
+  display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-top:12px}
+.out code{word-break:break-word}
+.steps{list-style:none; margin:0; padding:0; background:var(--surface); border:1px solid var(--line); border-radius:4px}
+.steps li{border-bottom:1px solid var(--line)}
+.steps li:last-child{border-bottom:0}
+.steps label{display:flex; gap:12px; margin:0; padding:11px 14px; font-weight:400; font-size:1rem; cursor:pointer}
+.steps input{margin-top:5px; accent-color:var(--ok); flex:none}
+.steps input:checked + span{color:var(--muted); text-decoration:line-through}
+.progress{font-weight:700; color:var(--slate)}
+.fix{background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:16px 18px; margin-top:14px}
+.fix dt{font-weight:700; font-size:.85rem; color:var(--muted); margin-top:10px}
+.fix dt:first-child{margin-top:0}
+.fix dd{margin:2px 0 0}
+#toast{position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%);
+  background:var(--ink); color:var(--bg); padding:9px 16px; border-radius:4px; font-weight:700; opacity:0; pointer-events:none;
+  transition:opacity .15s}
+#toast.on{opacity:1}
+@media (prefers-reduced-motion: reduce){#toast{transition:none}}
+footer{margin-top:44px; color:var(--muted); font-size:.85rem; border-top:1px solid var(--line); padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Power Automate Builder helper</h1>
+    <p class="lede">Prepare a complete request for Claude, look up the tokens for the intake workbook, follow the install steps, and get unstuck when a flow fails.</p>
+    <nav aria-label="Sections">
+      <a href="#brief">Write the request</a>
+      <a href="#tokens">Tokens and conditions</a>
+      <a href="#install">Install checklist</a>
+      <a href="#fix">Fix a problem</a>
+    </nav>
+  </header>
+
+  <!-- BRIEF -->
+  <section class="view" id="view-brief" aria-labelledby="h-brief">
+    <h2 id="h-brief">Write the request</h2>
+    <p class="help">Answer what you can. The sheet on the right becomes the message to paste into a new chat in the project. Nothing you type here leaves your browser.</p>
+    <div class="bench">
+      <form id="f" onsubmit="return false">
+        <fieldset>
+          <legend><span>1</span>The process</legend>
+          <div class="row">
+            <div><label for="pname">Process name</label><input id="pname" type="text" placeholder="Purchase requests"></div>
+            <div><label for="dept">Department</label><input id="dept" type="text" placeholder="Procurement"></div>
+          </div>
+          <label for="site">SharePoint site address <small>the one thing Claude cannot work without</small></label>
+          <input id="site" type="url" placeholder="https://yourtenant.sharepoint.com/sites/Procurement" autocomplete="off">
+          <div class="warn" id="siteWarn" role="status"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend><span>2</span>How you will describe it</legend>
+          <div class="choices">
+            <label class="choice"><input type="radio" name="input" value="desc" checked><div><b>I will describe it here</b><span>Best for small flows, up to about five steps.</span></div></label>
+            <label class="choice"><input type="radio" name="input" value="doc"><div><b>I will attach a procedure or policy</b><span>Claude extracts the steps and asks about gaps.</span></div></label>
+            <label class="choice"><input type="radio" name="input" value="wb"><div><b>I will attach the filled intake workbook</b><span>The most repeatable route. Claude converts it by script.</span></div></label>
+          </div>
+          <div id="descBlock">
+            <label for="trigger">What starts the process</label>
+            <select id="trigger">
+              <option value="">Choose one</option>
+              <option>Someone adds a new item to a SharePoint list</option>
+              <option>Someone changes an item in a SharePoint list</option>
+              <option>A file is added to a document library</option>
+              <option>A fixed schedule</option>
+              <option>Someone presses a button</option>
+              <option>A Microsoft Forms response</option>
+              <option>An email arrives</option>
+            </select>
+            <div class="row">
+              <div><label for="list">List or library name</label><input id="list" type="text" placeholder="Purchase Requests"></div>
+              <div><label for="exists">Does it exist already?</label>
+                <select id="exists"><option value="new">No, create it</option><option value="yes">Yes, it exists</option><option value="na">Not applicable</option></select></div>
+            </div>
+            <label for="steps">What should happen, step by step</label>
+            <textarea id="steps" placeholder="The named approver approves or rejects. The decision, date and comments are saved on the item. The requester gets an email either way. Requests over 50,000 also go to the department head."></textarea>
+            <label for="approver">Who approves or acts <small>leave blank if nobody does</small></label>
+            <select id="approver">
+              <option value="">No approval needed</option>
+              <option>The person named in a column on the item</option>
+              <option>The requester’s line manager</option>
+              <option>Fixed people (I will give emails)</option>
+              <option>People held in a reference list (by department or amount)</option>
+            </select>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend><span>3</span>Ownership and settings</legend>
+          <div class="row">
+            <div><label for="coowner">Co-owner</label><input id="coowner" type="text" placeholder="Name or email"></div>
+            <div><label for="alert">Failure alerts go to</label><input id="alert" type="email" placeholder="you@company.com"></div>
+          </div>
+          <div class="row">
+            <div><label for="tz">Time zone <small>optional; Claude asks if needed</small></label><input id="tz" type="text" placeholder="e.g. UTC or GMT Standard Time"></div>
+            <div><label for="cur">Currency <small>optional</small></label><input id="cur" type="text" placeholder="e.g. USD, GBP or EUR"></div>
+          </div>
+        </fieldset>
+
+      </form>
+
+      <aside class="sheet" aria-live="polite">
+        <h2>Your message to Claude</h2>
+        <pre id="prompt"></pre>
+        <div class="ready" id="ready"></div>
+        <div class="actions">
+          <button class="primary" id="copyPrompt" type="button">Copy message</button>
+          <button id="clearForm" type="button">Clear answers</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- TOKENS -->
+  <section class="view" id="view-tokens" aria-labelledby="h-tokens">
+    <h2 id="h-tokens">Tokens and conditions</h2>
+    <p class="help">Tokens go in the Steps sheet of the intake workbook. Select any token to copy it.</p>
+
+    <h3>Make a token for one of your columns</h3>
+    <div class="row">
+      <div><label for="col">Column internal name <small>no spaces</small></label><input id="col" type="text" placeholder="Approver"></div>
+      <div><label for="ctype">Column type</label>
+        <select id="ctype"><option value="text">Text or note</option><option value="number">Number or currency</option><option value="date">Date</option>
+        <option value="choice">Choice</option><option value="person">Person</option><option value="boolean">Yes/No</option><option value="lookup">Lookup</option></select></div>
+    </div>
+    <div class="tablewrap" style="margin-top:14px"><table>
+      <thead><tr><th>To do this</th><th>Write this</th><th>Note</th></tr></thead>
+      <tbody id="colRows"></tbody>
+    </table></div>
+
+    <h3>Build a condition</h3>
+    <div class="row">
+      <div><label for="cl">Left side</label><input id="cl" type="text" value="{Trigger.Amount}"></div>
+      <div><label for="cop">Operator</label>
+        <select id="cop"><option>equals</option><option>not equals</option><option selected>greater than</option><option>greater or equal</option><option>less than</option><option>less or equal</option><option>contains</option><option>starts with</option><option>is empty</option><option>is not empty</option></select></div>
+    </div>
+    <label for="cr">Right side</label><input id="cr" type="text" value="50000">
+    <div class="out"><code id="condOut"></code><button type="button" id="copyCond">Copy condition</button></div>
+
+    <h3>Ready-made tokens</h3>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Token</th><th>Gives</th></tr></thead>
+      <tbody id="fixedTokens"></tbody>
+    </table></div>
+  </section>
+
+  <!-- INSTALL -->
+  <section class="view" id="view-install" aria-labelledby="h-install">
+    <h2 id="h-install">Install checklist</h2>
+    <p class="help">Tick each step as you go. Your ticks are kept in this browser only. <span class="progress" id="progress"></span></p>
+    <div id="checklist"></div>
+    <div class="actions"><button type="button" id="resetChecks">Clear all ticks</button></div>
+  </section>
+
+  <!-- FIX -->
+  <section class="view" id="view-fix" aria-labelledby="h-fix">
+    <h2 id="h-fix">Fix a problem</h2>
+    <p class="help">Pick what you see. If the fix does not work, copy the message and paste it into the same chat where the flow was built.</p>
+    <label for="symptom">What is happening</label>
+    <select id="symptom"></select>
+    <dl class="fix" id="fixBox"></dl>
+    <label for="errText">Exact error text <small>paste it from the failed run</small></label>
+    <textarea id="errText" placeholder="Paste the error message here"></textarea>
+    <div class="row">
+      <div><label for="flowName">Flow name</label><input id="flowName" type="text" placeholder="Procurement - Purchase Requests - 1 Approval"></div>
+      <div><label for="actionName">Failing action <small>if shown</small></label><input id="actionName" type="text" placeholder="Mark as approved"></div>
+    </div>
+    <div class="out"><code id="fixPrompt"></code><button type="button" class="primary" id="copyFix">Copy message</button></div>
+  </section>
+
+  <footer>Companion to the Power Automate Builder skill. Claude builds nothing until you confirm the specification, and never asks for your password.</footer>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var store = {
+    get: function(k, d){ try { var v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } },
+    set: function(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+  };
+  function toast(msg){ var t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function(){ t.classList.remove('on'); }, 1600); }
+  function copy(text, msg){
+    function fallback(){ var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); toast(msg); } catch(e){ toast('Select the text and copy it by hand'); } document.body.removeChild(ta); }
+    if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(function(){ toast(msg); }, fallback); } else { fallback(); }
+  }
+
+  /* ---------- routing ---------- */
+  var views = ['brief','tokens','install','fix'];
+  function route(){
+    var h = (location.hash || '').replace('#','');
+    if (views.indexOf(h) < 0) h = 'brief';
+    views.forEach(function(v){ $('view-' + v).classList.toggle('on', v === h); });
+    document.querySelectorAll('nav a').forEach(function(a){
+      if (a.getAttribute('href') === '#' + h) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current');
+    });
+  }
+  window.addEventListener('hashchange', route); route();
+
+  /* ---------- brief ---------- */
+  var ids = ['pname','dept','site','trigger','list','exists','steps','approver','coowner','alert','tz','cur'];
+  var saved = store.get('pab-brief', {});
+  ids.forEach(function(id){ if (saved[id] !== undefined) $(id).value = saved[id]; });
+  ['input'].forEach(function(n){ if (saved[n]) { var r = document.querySelector('input[name=' + n + '][value="' + saved[n] + '"]'); if (r) r.checked = true; } });
+  function radio(n){ var r = document.querySelector('input[name=' + n + ']:checked'); return r ? r.value : ''; }
+
+  function build(){
+    var v = {}; ids.forEach(function(id){ v[id] = $(id).value.trim(); });
+    v.input = radio('input');
+    store.set('pab-brief', v);
+    $('descBlock').style.display = v.input === 'wb' ? 'none' : '';
+    var siteOk = /^https:\/\/[a-z0-9-]+\.sharepoint\.com\/(sites|teams)\/[^\/\s]+\/?$/i.test(v.site);
+    $('siteWarn').textContent = v.site && !siteOk ? 'This should look like https://tenant.sharepoint.com/sites/Name, with nothing after the site name.' : '';
+
+    var L = [];
+    L.push('Use the Power Automate Builder skill to automate this process.');
+    L.push('');
+    L.push('Process: ' + (v.pname || '[process name]') + (v.dept ? ' (' + v.dept + ')' : ''));
+    L.push('SharePoint site: ' + (v.site || '[site address]'));
+    if (v.input === 'wb'){
+      L.push('');
+      L.push('The attached Automation Intake Workbook is filled in. Convert it, then show me the specification and every line of the conversion report.');
+    } else {
+      if (v.input === 'doc'){
+        L.push('');
+        L.push('The attached document describes the process. Extract the steps that can be automated and cite the section for each. List gaps and contradictions as numbered questions. Do not resolve them yourself.');
+      }
+      if (v.trigger) L.push('What starts it: ' + v.trigger + '.');
+      if (v.list && v.exists !== 'na') L.push('List or library: ' + v.list + (v.exists === 'yes' ? ' (exists already; ask me for its column names if you need them)' : ' (does not exist yet; please create it)') + '.');
+      if (v.steps){ L.push(''); L.push('What should happen:'); L.push(v.steps); }
+      if (v.approver){ L.push(''); L.push('Who approves or acts: ' + v.approver + '.'); }
+    }
+    L.push('');
+    L.push('Owner: me.' + (v.coowner ? ' Co-owner: ' + v.coowner + '.' : '') + (v.alert ? ' Failure alerts to: ' + v.alert + '.' : ''));
+    var set = []; if (v.tz) set.push('Time zone: ' + v.tz + '.'); if (v.cur) set.push('Currency: ' + v.cur + '.');
+    if (set.length) L.push(set.join(' '));
+    L.push('Delivery: import packages (.zip) for Import Package (Legacy), with the Install Checklist and the Build Sheet.');
+    L.push('');
+    L.push('Write the Flow Specification first and wait for my confirmation before building anything. State open points and assumptions explicitly.');
+    $('prompt').textContent = L.join('\n');
+
+    var miss = [];
+    if (!v.pname) miss.push('Process name');
+    if (!siteOk) miss.push('A valid SharePoint site address');
+    if (v.input !== 'wb'){
+      if (!v.trigger && v.input === 'desc') miss.push('What starts the process');
+      if (!v.steps && v.input === 'desc') miss.push('What should happen, step by step');
+    }
+    if (!v.coowner) miss.push('A co-owner');
+    if (!v.alert) miss.push('Where failure alerts go');
+    var attach = v.input === 'doc' ? ' Remember to attach the document.' : v.input === 'wb' ? ' Remember to attach the workbook.' : '';
+    $('ready').innerHTML = miss.length
+      ? 'Still missing. Claude will ask for these:<ul>' + miss.map(function(m){ return '<li>' + m + '</li>'; }).join('') + '</ul>'
+      : '<span class="good">Ready to send.</span>' + attach;
+  }
+  $('f').addEventListener('input', build); $('f').addEventListener('change', build); build();
+  $('copyPrompt').addEventListener('click', function(){ copy($('prompt').textContent, 'Message copied'); });
+  $('clearForm').addEventListener('click', function(){
+    ids.forEach(function(id){ var el = $(id); if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = ''; });
+    document.querySelector('input[name=input][value=desc]').checked = true;
+    build(); toast('Answers cleared');
+  });
+
+  /* ---------- tokens ---------- */
+  var fixed = [
+    ['{Trigger.ID}','The ID of the item that started the flow'],
+    ['{Trigger.Title}','Its Title column'],
+    ['{Trigger.Link}','A link to open the item'],
+    ['{Trigger.CreatedBy.Email}','Email of the person who created it'],
+    ['{Trigger.CreatedBy.Name}','Their display name'],
+    ['{Approval.Outcome}','Approve or Reject, from the latest approval step before this one'],
+    ['{Approval.Comments}','The approver’s comments'],
+    ['{Approval.Responder}','Email of the person who responded'],
+    ['{Manager.Email}','From the latest Get manager step before this one'],
+    ['{Manager.Name}','The manager’s display name'],
+    ['{Today}','Today’s date, for date columns'],
+    ['{Now}','Local date and time in your date format, for messages'],
+    ['{Owner.Email}','The owner email from the Process sheet']
+  ];
+  function tokBtn(t){ return '<button type="button" class="tok" data-copy="' + t.replace(/"/g,'&quot;') + '">' + t.replace(/</g,'&lt;') + '</button>'; }
+  $('fixedTokens').innerHTML = fixed.map(function(r){ return '<tr><td>' + tokBtn(r[0]) + '</td><td>' + r[1] + '</td></tr>'; }).join('');
+  function colRows(){
+    var raw = $('col').value.trim(), c = raw.replace(/[^A-Za-z0-9_]/g,'') || 'ColumnName', t = $('ctype').value;
+    var read = '{Trigger.' + c + '}', rows = [], note = { text:'', number:'Use in conditions with greater than or less than.', date:'', boolean:'',
+      choice:'Gives the chosen value.', person:'Gives the person’s email.', lookup:'Gives the looked-up value.' }[t];
+    rows.push(['Read it from the triggering item', read, note]);
+    if (t === 'person') rows.push(['Read the person’s name', '{Trigger.' + c + '.Name}', 'For greetings in emails.']);
+    var ex = { text:'Some text', number:'5000', date:'{Today}', choice:'Approved', person:'{Trigger.CreatedBy.Email}', boolean:'Yes', lookup:'3' }[t];
+    var wnote = { text:'', number:'Digits only, no thousands separator.', date:'Or a date as yyyy-MM-dd.', choice:'Must match one of the column’s choices exactly.',
+      person:'Give an email or an email token.', boolean:'Yes or No.', lookup:'The ID of the item in the other list.' }[t];
+    rows.push(['Write it in Field values', c + '=' + ex, wnote]);
+    $('colRows').innerHTML = rows.map(function(r){ return '<tr><td>' + r[0] + '</td><td>' + tokBtn(r[1]) + '</td><td>' + r[2] + '</td></tr>'; }).join('')
+      + (raw && raw !== c ? '<tr><td colspan="3" class="warn">Internal names have no spaces or symbols. Using ' + c + '.</td></tr>' : '');
+  }
+  $('col').addEventListener('input', colRows); $('ctype').addEventListener('change', colRows); colRows();
+  function cond(){
+    var op = $('cop').value, noRight = op.indexOf('is ') === 0;
+    $('cr').disabled = noRight;
+    $('condOut').textContent = $('cl').value.trim() + ' | ' + op + (noRight ? '' : ' | ' + $('cr').value.trim());
+  }
+  ['cl','cop','cr'].forEach(function(id){ $(id).addEventListener('input', cond); }); cond();
+  $('copyCond').addEventListener('click', function(){ copy($('condOut').textContent, 'Condition copied'); });
+  document.addEventListener('click', function(e){ var b = e.target.closest('[data-copy]'); if (b) copy(b.getAttribute('data-copy'), 'Copied'); });
+
+  /* ---------- checklist ---------- */
+  var groups = [
+    ['Before you import', [
+      'Sign in to make.powerautomate.com with your work account.',
+      'Check the environment name at the top right is the one your team uses.',
+      'Under Connections, confirm SharePoint, Approvals and Office 365 Outlook work.',
+      'Save the .zip files without unzipping them.']],
+    ['Import each package, in number order', [
+      'My flows, then Import, then Import Package (Legacy).',
+      'Upload the .zip and wait for the package details.',
+      'For each connection row, choose Select during import, pick your connection, Save.',
+      'Select Import, then Open flow.']],
+    ['Create the lists with flow 0', [
+      'Open flow 0 and select Run, then Run flow.',
+      'Open the run and confirm the list steps are green.',
+      'Check the lists and columns on the SharePoint site.',
+      'Delete flow 0 or leave it switched off.']],
+    ['Finish each flow', [
+      'Open each SharePoint action and confirm the site and list show without errors.',
+      'Set the values listed under “Values to set after import” in the Build Sheet.',
+      'Save and clear any Flow checker errors.',
+      'Turn the flow on from its details page.',
+      'Share the flow with your co-owner.']],
+    ['Test and sign off', [
+      'Run every test case in the Build Sheet with yourself as approver.',
+      'Test both approve and reject.',
+      'Cause one failure on purpose and confirm the alert email arrives.',
+      'Replace test people with the real ones, then file the Build Sheet.']]
+  ];
+  var ticks = store.get('pab-ticks', {});
+  var html = '', n = 0;
+  groups.forEach(function(g, gi){
+    html += '<h3>' + (gi + 1) + '. ' + g[0] + '</h3><ol class="steps">';
+    g[1].forEach(function(s, si){ var k = gi + '-' + si; n++;
+      html += '<li><label><input type="checkbox" data-k="' + k + '"' + (ticks[k] ? ' checked' : '') + '><span>' + s + '</span></label></li>'; });
+    html += '</ol>';
+  });
+  $('checklist').innerHTML = html;
+  function prog(){ var d = document.querySelectorAll('#checklist input:checked').length; $('progress').textContent = d + ' of ' + n + ' done.'; }
+  $('checklist').addEventListener('change', function(e){ var k = e.target.getAttribute('data-k'); if (!k) return; ticks[k] = e.target.checked; store.set('pab-ticks', ticks); prog(); });
+  $('resetChecks').addEventListener('click', function(){ ticks = {}; store.set('pab-ticks', ticks);
+    document.querySelectorAll('#checklist input').forEach(function(i){ i.checked = false; }); prog(); toast('Ticks cleared'); });
+  prog();
+
+  /* ---------- fix ---------- */
+  var probs = [
+    ['There is no “Import Package (Legacy)” option','The environment only accepts solutions.','Switch to the default environment and try again. If it is still missing, ask the Power Platform admin to allow package import.'],
+    ['Upload says the package is invalid','The .zip was opened and zipped again, which changes its structure.','Download the original file from the chat again and upload it untouched.'],
+    ['The Import button stays grey','At least one connection row has not been set.','Select each row under Select during import, pick a connection and Save. Create the connection first if none is listed.'],
+    ['A connector is blocked by policy','A data loss prevention policy forbids that connector, or that mix of connectors.','Do not work around it. Ask the admin, or ask Claude to redesign with allowed connectors.'],
+    ['An action says the list was not found','The list name is different, or contains a full stop.','Open the action and reselect the site and list from the drop-downs, then save.'],
+    ['Update item fails with error 400','A required column is empty, a Choice value does not match exactly, or a Person value is not a valid email.','Compare the value sent with the column’s settings. Check spelling and capital letters of Choice values.'],
+    ['A step fails with error 403','The person whose connection runs the flow has no permission on the site or list.','Give that person Edit permission, or reconnect with an account that has it.'],
+    ['The flow runs again and again','It updates the same list that triggers it.','Turn the flow off. Ask Claude to add a trigger condition, for example only when Status equals Submitted.'],
+    ['The approval never arrives','The Approver column is empty, is not a Person column, or its internal name differs.','Check the item has an approver. Check the internal name in List settings and tell Claude if it differs.'],
+    ['Emails come from the wrong person','Flows send as the owner of the Outlook connection.','Ask Claude to switch to the shared mailbox action, and make sure you have Send As rights on that mailbox.'],
+    ['Something else','','Paste the exact error text below and send the message to Claude.']
+  ];
+  $('symptom').innerHTML = probs.map(function(p, i){ return '<option value="' + i + '">' + p[0] + '</option>'; }).join('');
+  function fix(){
+    var p = probs[+$('symptom').value];
+    $('fixBox').innerHTML = (p[1] ? '<dt>Likely cause</dt><dd>' + p[1] + '</dd>' : '') + '<dt>What to do</dt><dd>' + p[2] + '</dd>';
+    var f = $('flowName').value.trim(), a = $('actionName').value.trim(), e = $('errText').value.trim();
+    $('fixPrompt').textContent = 'The flow ' + (f ? '“' + f + '”' : '[flow name]') + ' has a problem: ' + p[0].toLowerCase() + '.'
+      + (a ? ' Failing action: “' + a + '”.' : '') + (e ? ' Exact error: ' + e : ' [paste the exact error text]')
+      + ' Explain the cause in plain words and give me the corrected package or the exact change to make. Update the Build Sheet.';
+  }
+  ['symptom','flowName','actionName','errText'].forEach(function(id){ $(id).addEventListener('input', fix); }); fix();
+  $('copyFix').addEventListener('click', function(){ copy($('fixPrompt').textContent, 'Message copied'); });
+})();
+</script>
+</body>
+</html>

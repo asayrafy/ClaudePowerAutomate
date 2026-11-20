@@ -1,0 +1,28 @@
+{
+  "siteUrl": "<<SITE_URL>>",
+  "flowName": "Purchase Requests - 0 Provision lists",
+  "lists": [
+    {
+      "title": "Departments",
+      "description": "Reference list of departments and their heads",
+      "columns": [
+        {"name": "DepartmentHead", "displayName": "Department Head", "type": "person", "required": true}
+      ]
+    },
+    {
+      "title": "Purchase Requests",
+      "urlName": "PurchaseRequests",
+      "description": "Purchase requests raised by staff for approval",
+      "titleDisplayName": "Item Description",
+      "columns": [
+        {"name": "Amount", "displayName": "Amount", "type": "currency", "required": true},
+        {"name": "Department", "type": "lookup", "lookupList": "Departments", "lookupField": "Title", "required": true},
+        {"name": "Justification", "type": "note", "required": true},
+        {"name": "Approver", "type": "person", "required": true},
+        {"name": "Status", "type": "choice", "choices": ["Submitted", "Approved", "Rejected"], "default": "Submitted", "indexed": true},
+        {"name": "DecisionDate", "displayName": "Decision Date", "type": "date"},
+        {"name": "ApproverComments", "displayName": "Approver Comments", "type": "note"}
+      ]
+    }
+  ]
+}

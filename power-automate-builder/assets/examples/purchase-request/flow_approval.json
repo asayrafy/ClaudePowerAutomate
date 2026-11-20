@@ -1,0 +1,115 @@
+{
+  "displayName": "Purchase Requests - 1 Approval on new request",
+  "description": "When a purchase request is created, send it to the named approver, record the decision on the item and email the requester.",
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "$connections": {"defaultValue": {}, "type": "Object"},
+      "$authentication": {"defaultValue": {}, "type": "SecureObject"}
+    },
+    "triggers": {
+      "When_a_purchase_request_is_created": {
+        "recurrence": {"interval": 1, "frequency": "Minute"},
+        "splitOn": "@triggerOutputs()?['body/value']",
+        "type": "OpenApiConnection",
+        "inputs": {
+          "host": {"apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline", "connectionName": "shared_sharepointonline", "operationId": "GetOnNewItems"},
+          "parameters": {"dataset": "<<SITE_URL>>", "table": "<<LIST_PURCHASE_REQUESTS>>"},
+          "authentication": "@parameters('$authentication')"
+        }
+      }
+    },
+    "actions": {
+      "Start_and_wait_for_an_approval": {
+        "type": "OpenApiConnectionWebhook",
+        "inputs": {
+          "host": {"apiId": "/providers/Microsoft.PowerApps/apis/shared_approvals", "connectionName": "shared_approvals", "operationId": "StartAndWaitForAnApproval"},
+          "parameters": {
+            "approvalType": "Basic",
+            "WebhookApprovalCreationInput/title": "Purchase request: @{triggerOutputs()?['body/Title']}",
+            "WebhookApprovalCreationInput/assignedTo": "@{triggerOutputs()?['body/Approver/Email']}",
+            "WebhookApprovalCreationInput/details": "Requested by: @{triggerOutputs()?['body/Author/DisplayName']}\nAmount: @{triggerOutputs()?['body/Amount']}\nJustification: @{triggerOutputs()?['body/Justification']}",
+            "WebhookApprovalCreationInput/itemLink": "@{triggerOutputs()?['body/{Link}']}",
+            "WebhookApprovalCreationInput/itemLinkDescription": "Open the request",
+            "WebhookApprovalCreationInput/enableNotifications": true,
+            "WebhookApprovalCreationInput/enableReassignment": true
+          },
+          "authentication": "@parameters('$authentication')"
+        },
+        "runAfter": {}
+      },
+      "Is_approved": {
+        "type": "If",
+        "expression": {"and": [{"equals": ["@body('Start_and_wait_for_an_approval')?['outcome']", "Approve"]}]},
+        "actions": {
+          "Mark_as_approved": {
+            "type": "OpenApiConnection",
+            "inputs": {
+              "host": {"apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline", "connectionName": "shared_sharepointonline", "operationId": "PatchItem"},
+              "parameters": {
+                "dataset": "<<SITE_URL>>",
+                "table": "<<LIST_PURCHASE_REQUESTS>>",
+                "id": "@triggerOutputs()?['body/ID']",
+                "item/Status/Value": "Approved",
+                "item/DecisionDate": "@{utcNow('yyyy-MM-dd')}",
+                "item/ApproverComments": "@{first(body('Start_and_wait_for_an_approval')?['responses'])?['comments']}"
+              },
+              "authentication": "@parameters('$authentication')"
+            },
+            "runAfter": {}
+          },
+          "Email_requester_approved": {
+            "type": "OpenApiConnection",
+            "inputs": {
+              "host": {"apiId": "/providers/Microsoft.PowerApps/apis/shared_office365", "connectionName": "shared_office365", "operationId": "SendEmailV2"},
+              "parameters": {
+                "emailMessage/To": "@{triggerOutputs()?['body/Author/Email']}",
+                "emailMessage/Subject": "Approved: @{triggerOutputs()?['body/Title']}",
+                "emailMessage/Body": "<p>Your purchase request <b>@{triggerOutputs()?['body/Title']}</b> has been approved.</p><p>Comments: @{first(body('Start_and_wait_for_an_approval')?['responses'])?['comments']}</p>",
+                "emailMessage/Importance": "Normal"
+              },
+              "authentication": "@parameters('$authentication')"
+            },
+            "runAfter": {"Mark_as_approved": ["Succeeded"]}
+          }
+        },
+        "else": {
+          "actions": {
+            "Mark_as_rejected": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {"apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline", "connectionName": "shared_sharepointonline", "operationId": "PatchItem"},
+                "parameters": {
+                  "dataset": "<<SITE_URL>>",
+                  "table": "<<LIST_PURCHASE_REQUESTS>>",
+                  "id": "@triggerOutputs()?['body/ID']",
+                  "item/Status/Value": "Rejected",
+                  "item/DecisionDate": "@{utcNow('yyyy-MM-dd')}",
+                  "item/ApproverComments": "@{first(body('Start_and_wait_for_an_approval')?['responses'])?['comments']}"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runAfter": {}
+            },
+            "Email_requester_rejected": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {"apiId": "/providers/Microsoft.PowerApps/apis/shared_office365", "connectionName": "shared_office365", "operationId": "SendEmailV2"},
+                "parameters": {
+                  "emailMessage/To": "@{triggerOutputs()?['body/Author/Email']}",
+                  "emailMessage/Subject": "Not approved: @{triggerOutputs()?['body/Title']}",
+                  "emailMessage/Body": "<p>Your purchase request <b>@{triggerOutputs()?['body/Title']}</b> was not approved.</p><p>Comments: @{first(body('Start_and_wait_for_an_approval')?['responses'])?['comments']}</p>",
+                  "emailMessage/Importance": "Normal"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runAfter": {"Mark_as_rejected": ["Succeeded"]}
+            }
+          }
+        },
+        "runAfter": {"Start_and_wait_for_an_approval": ["Succeeded"]}
+      }
+    }
+  }
+}
